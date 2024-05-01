@@ -7,3 +7,5 @@
 4. Set the target to the wiki you want (by default, `gg.wiki.gg`, the testing wiki
 5. Set `use_site_pw` to `True` if you are editing an onboarding wiki (but you may want to test that it's working on gg.wiki.gg first)
 6. Run the script.
+7. The first time you run the script, you'll be prompted by `AuthCredentials` to enter your username, bot name, and bot password. If you're using `use_site_pw=True` you'll also be asked for the user-pass combination to view the wiki.
+    * If you don't set `use_site_pw=True` the first time you run the script, you can either make a new set of credentials and add the dev user/pass that time or add the fields `site_user` and `site_pw` to the json located at `~/.config/mwcleric/wiki_account_me.json` (e.g. for me on Windows this is `C:/Users/River/.config/mwcleric/wiki_account_me.json`)
