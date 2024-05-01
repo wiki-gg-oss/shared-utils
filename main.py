@@ -16,7 +16,7 @@ class Loadout:
 
     def __init__(self):
         self.passed_startat = False
-        credentials = AuthCredentials(user_file="me", use_site_pw=False)
+        credentials = AuthCredentials(user_file="me", use_site_pw=False)  # set to True iff the wiki is onboarding
         self.loadout = WikiggClient('defaultloadout')
         self.target = WikiggClient('gg', credentials=credentials)  # edit the wiki here
 
