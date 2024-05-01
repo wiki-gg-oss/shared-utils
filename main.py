@@ -3,6 +3,7 @@ import time
 from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
 from mwclient import AssertUserFailedError
+from mwclient.page import Page
 
 
 class Loadout:
@@ -15,19 +16,21 @@ class Loadout:
 
     def __init__(self):
         self.passed_startat = False
-        credentials = AuthCredentials(user_file="me", use_site_pw=True)
+        credentials = AuthCredentials(user_file="me", use_site_pw=False)
         self.loadout = WikiggClient('defaultloadout')
-        self.target = WikiggClient('rl-esports', credentials=credentials)  # edit the wiki here
+        self.target = WikiggClient('gg', credentials=credentials)  # edit the wiki here
 
     def run(self):
-        pass
+        self.copy()
+        self.move()
 
     def copy(self):
         for ns in self.loadout.client.namespaces:
             print(f"Starting namespace {ns}")
             if ns > self.startat_namespace - 1:  # ns 4 is Project ns
                 for orig_page in self.loadout.client.allpages(namespace=ns):
-                    time.sleep(0.5)
+                    orig_page: Page
+                    time.sleep(1)
                     print(orig_page.name)
                     new_title = orig_page.name
                     if ns == 4:
@@ -40,14 +43,8 @@ class Loadout:
                     if self.overwrite_existing or not target_page.exists:
                         try:
                             target_page.save(orig_page.text(), summary=self.summary)
-                            for k, v in orig_page.protection.items():
-                                self.target.client.api('protect',
-                                                       title=target_page.name,
-
-                                                       expiry=v[1],
-                                                       reason="Copying protection level from loadout"
-                                                       )
-
+                            protections = '|'.join([f'{k}={v[0]}' for k, v in orig_page.protection.items()])
+                            self.target.protect(target_page, protections=protections)
 
                         except AssertUserFailedError:
                             self.target.login()
@@ -58,3 +55,7 @@ class Loadout:
         target_mainpage = self.target.client.site['mainpage']
         self.target.client.pages[loadout_mainpage].move(target_mainpage, reason="Move main page for new wiki",
                                                         no_redirect=True)
+
+
+if __name__ == '__main__':
+    Loadout().run()
