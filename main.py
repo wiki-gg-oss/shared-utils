@@ -55,6 +55,7 @@ class Loadout:
         target_mainpage = self.target.client.site['mainpage']
         self.target.client.pages[loadout_mainpage].move(target_mainpage, reason="Move main page for new wiki",
                                                         no_redirect=True)
+        self.target.client.pages['Main Page'].save(f'#redirect [[{target_mainpage}]]')
 
 
 if __name__ == '__main__':
