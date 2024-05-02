@@ -8,7 +8,7 @@ from mwclient.page import Page
 
 
 class Loadout:
-    target_name = 'thedeepabyss'
+    target_name = 'gg'
     startat_namespace = 0
     startat_page = None
     # noinspection PyRedeclaration
