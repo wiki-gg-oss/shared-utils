@@ -3,7 +3,7 @@ import time
 import requests.exceptions
 from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
-from mwclient import AssertUserFailedError
+from mwclient import AssertUserFailedError, APIError
 from mwclient.page import Page
 
 
@@ -12,7 +12,7 @@ class Loadout:
     startat_namespace = 0
     startat_page = None
     # noinspection PyRedeclaration
-    # startat_page = 'MediaWiki:Wikigg-socialmedia-jointext-sidebar'  # uncomment & edit this line if you want to resume running in the middle
+    # startat_page = 'Template:Anchor/doc'  # uncomment & edit this line if you want to resume running in the middle
 
     overwrite_existing = True
     summary = 'Adding default set of pages'
@@ -24,7 +24,7 @@ class Loadout:
         self.target = WikiggClient(self.target_name, credentials=credentials)  # edit the wiki here
 
     def run(self):
-        self.copy()
+        # self.copy()
         self.move()
 
     def copy(self):
@@ -47,7 +47,7 @@ class Loadout:
                         try:
                             self.save(target_page, orig_page)
                         except requests.exceptions.HTTPError:
-                            time.sleep(20)
+                            time.sleep(30)
                             self.save(target_page, orig_page)
 
     def save(self, target_page: Page, orig_page: Page):
@@ -64,7 +64,10 @@ class Loadout:
 
         target_new_mainpage = self.target.client.pages[loadout_mainpage_name]
         target_orig_mainpage = self.target.client.pages[target_mainpage_name]
-        self.target.delete(target_orig_mainpage, "To move default main page")
+        try:
+            self.target.delete(target_orig_mainpage, "To move default main page")
+        except APIError:
+            pass
         self.target.move(target_new_mainpage, target_mainpage_name, reason="Move main page for new wiki",
                          no_redirect=True, ignore_warnings=True)
         if target_mainpage_name != "Main Page":
