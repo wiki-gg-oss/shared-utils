@@ -24,7 +24,7 @@ class Loadout:
         self.target = WikiggClient(self.target_name, credentials=credentials)  # edit the wiki here
 
     def run(self):
-        # self.copy()
+        self.copy()
         self.move()
 
     def copy(self):
