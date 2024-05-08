@@ -3,13 +3,12 @@ import time
 import requests.exceptions
 from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
-from mwcleric.models.simple_page import SimplePage
-from mwclient import AssertUserFailedError, APIError
 from mwclient.page import Page
+
+WIKIS = ['gg']
 
 
 class Loadout:
-    target_name = 'gg'
     startat_namespace = 0
     startat_page = None
     # noinspection PyRedeclaration
@@ -18,11 +17,12 @@ class Loadout:
     overwrite_existing = True
     summary = 'Adding default set of pages'
 
-    def __init__(self):
+    def __init__(self, target_name):
         self.passed_startat = False
         credentials = AuthCredentials(user_file="me", use_site_pw=True)  # set to True iff the wiki is onboarding
+        self.target_name = target_name
         self.loadout = WikiggClient('defaultloadout')
-        self.target = WikiggClient(self.target_name, credentials=credentials)  # edit the wiki here
+        self.target = WikiggClient(target_name, credentials=credentials)  # edit the wiki here
 
     def run(self):
         self.copy()
@@ -85,4 +85,5 @@ class Loadout:
 
 
 if __name__ == '__main__':
-    Loadout().run()
+    for wiki in WIKIS:
+        Loadout(wiki).run()
