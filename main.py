@@ -12,14 +12,15 @@ class Loadout:
     startat_namespace = 0
     startat_page = None
     # noinspection PyRedeclaration
-    # startat_page = 'MediaWiki:Vector.css'  # uncomment & edit this line if you want to resume running in the middle
-
-    overwrite_existing = True
+    # startat_page = 'Template:License'  # uncomment & edit this line if you want to resume running in the middle
+    #
+    is_import = False  # don't overwrite & don't make mainspace pages
+    skip_css = False
     summary = 'Adding default set of pages'
 
     def __init__(self, target_name):
         self.passed_startat = False
-        credentials = AuthCredentials(user_file="me", use_site_pw=True)  # set to True iff the wiki is onboarding
+        credentials = AuthCredentials(user_file="me")  # set to True iff the wiki is onboarding
         self.target_name = target_name
         self.loadout = WikiggClient('defaultloadout')
         self.target = WikiggClient(target_name, credentials=credentials)  # edit the wiki here
@@ -35,7 +36,8 @@ class Loadout:
             if ns == 0:
                 continue
             self.copy_namespace(ns)
-        self.copy_namespace(0)
+        if not self.is_import:
+            self.copy_namespace(0)
 
     def copy_namespace(self, ns: int):
         for orig_page in self.loadout.client.allpages(namespace=ns):
@@ -52,12 +54,23 @@ class Loadout:
             return
         print(orig_page.name)
         new_title = orig_page.name
+        new_site_name = self.target.client.site['sitename']
         if ns == 4:
             new_title = f'Project:{orig_page.page_title}'
         if orig_page.name == self.loadout.client.site['mainpage']:
-            new_title = self.target.client.site['sitename']
+            new_title = new_site_name
+        if orig_page.name == 'Category:' + self.loadout.client.site['sitename']:
+            new_title = 'Category:' + new_site_name
         target_page = self.target.client.pages[new_title]
-        if self.overwrite_existing or not target_page.exists:
+        do_save = False
+        if not self.is_import:
+            do_save = True
+        elif new_title in ['MediaWiki:Common.css', 'MediaWiki:Vector.css']:
+            if not self.skip_css:
+                do_save = True
+        elif not target_page.exists:
+            do_save = True
+        if do_save:
             self.save(target_page, orig_page)
 
     def save(self, target_page: Page, orig_page: Page):
