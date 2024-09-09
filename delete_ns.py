@@ -3,8 +3,9 @@ import time
 from mwcleric.errors import RetriedLoginAndStillFailed
 from mwcleric.wikigg_client import WikiggClient
 from mwcleric.auth_credentials import AuthCredentials
+from mwclient import APIError
 
-credentials = AuthCredentials(user_file="me")
+credentials = AuthCredentials(user_file="bot")
 
 wikis = ['gg']
 
@@ -12,13 +13,13 @@ for wiki in wikis:
     limit = -1
     startat_page = None
     # startat_page = 'Zuchtzentrum'
-    site = WikiggClient(wiki, credentials=credentials, lang='es')  # Set wiki
+    site = WikiggClient(wiki, credentials=credentials)  # Set wiki
     # this_template = site.client.pages['Template:Infobox Player']  # Set template
     # pages = this_template.embeddedin()
 
     # pages = site.client.categories['Pages with script errors']
 
-    pages = site.client.categories['Pages with failing Cargo queries']
+    pages = site.client.allpages(namespace=3)
 
     passed_startat = False if startat_page else True
     lmt = 0
@@ -29,9 +30,10 @@ for wiki in wikis:
             passed_startat = True
         if not passed_startat:
             continue
-        print('Purging page %s...' % page.name)
+        print('Deleting page %s...' % page.name)
         try:
-            site.purge(page)
-            site.touch(page)
+            site.delete(page)
+        except APIError:
+            continue
         except RetriedLoginAndStillFailed:
             continue

@@ -12,8 +12,7 @@ class Loadout:
     startat_namespace = 0
     startat_page = None
     # noinspection PyRedeclaration
-    # startat_page = 'Template:License'  # uncomment & edit this line if you want to resume running in the middle
-    #
+    # startat_page = 'Template:License'
     is_import = False  # don't overwrite & don't make mainspace pages
     skip_css = False
     summary = 'Adding default set of pages'
@@ -52,6 +51,9 @@ class Loadout:
             self.passed_startat = True
         if self.startat_page is not None and not self.passed_startat:
             return
+        if orig_page.name == 'File:Site-favicon.ico':
+            # don't copy the favicon page, to avoid warnings when people upload it
+            return
         print(orig_page.name)
         new_title = orig_page.name
         new_site_name = self.target.client.site['sitename']
@@ -64,11 +66,14 @@ class Loadout:
         target_page = self.target.client.pages[new_title]
         do_save = False
         if not self.is_import:
-            do_save = True
+            # if it's not an import we always do the save
+            # except at page MediaWiki copyright, then we don't want to overwrite
+            if new_title != 'MediaWiki:Copyright':
+                do_save = True
         elif new_title in ['MediaWiki:Common.css', 'MediaWiki:Vector.css']:
             if not self.skip_css:
                 do_save = True
-        elif not target_page.exists:
+        elif not target_page.exists and new_title != 'MediaWiki:Copyright':
             do_save = True
         if do_save:
             self.save(target_page, orig_page)
