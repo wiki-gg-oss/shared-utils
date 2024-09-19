@@ -5,7 +5,7 @@ from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
 from mwclient.page import Page
 
-WIKIS = ['gg']
+WIKIS = ['gg:en']
 
 
 class Loadout:
@@ -17,12 +17,19 @@ class Loadout:
     skip_css = False
     summary = 'Adding default set of pages'
 
-    def __init__(self, target_name):
+    def __init__(self, target_name, target_lang):
         self.passed_startat = False
         credentials = AuthCredentials(user_file="me")  # set to True iff the wiki is onboarding
         self.target_name = target_name
+        self.target_lang = target_lang
         self.loadout = WikiggClient('defaultloadout')
-        self.target = WikiggClient(target_name, credentials=credentials)  # edit the wiki here
+        self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)  # edit the wiki here
+        self.docpage = '/doc'
+        if target_lang is not None and target_lang != 'en':
+            doc_page_name = self.target.localize('Scribunto-doc-page-name')
+            print(doc_page_name)
+            page, docpage = doc_page_name.split('/')
+            self.docpage = '/' + docpage
 
     def run(self):
         self.copy()
@@ -63,12 +70,16 @@ class Loadout:
             new_title = new_site_name
         if orig_page.name == 'Category:' + self.loadout.client.site['sitename']:
             new_title = 'Category:' + new_site_name
+        if orig_page.namespace == 828 and orig_page.name.endswith('/doc'):
+            new_title = new_title.replace('/doc', self.docpage)
+
         target_page = self.target.client.pages[new_title]
         do_save = False
         if not self.is_import:
             # if it's not an import we always do the save
             # except at page MediaWiki copyright, then we don't want to overwrite
-            if new_title != 'MediaWiki:Copyright':
+            # if new_title != 'MediaWiki:Copyright':
+            if new_title != 'MediaWiki:Copyright' or not target_page.exists:
                 do_save = True
         elif new_title in ['MediaWiki:Common.css', 'MediaWiki:Vector.css']:
             if not self.skip_css:
@@ -91,4 +102,8 @@ class Loadout:
 
 if __name__ == '__main__':
     for wiki in WIKIS:
-        Loadout(wiki).run()
+        if ':' in wiki:
+            name, lang = wiki.split(':')
+            Loadout(name, lang).run()
+        else:
+            Loadout(wiki, None).run()
