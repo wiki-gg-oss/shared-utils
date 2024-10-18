@@ -5,7 +5,7 @@ from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
 from mwclient.page import Page
 
-WIKIS = ['gg:en']
+WIKIS = ['gg']
 
 
 class Loadout:
@@ -16,6 +16,7 @@ class Loadout:
     is_import = False  # don't overwrite & don't make mainspace pages
     skip_css = False
     summary = 'Adding default set of pages'
+    subject_name: str = None
 
     def __init__(self, target_name, target_lang):
         self.passed_startat = False
@@ -25,6 +26,9 @@ class Loadout:
         self.loadout = WikiggClient('defaultloadout')
         self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)  # edit the wiki here
         self.docpage = '/doc'
+        sitename: str = self.target.client.site['sitename']
+        if sitename.endswith(' Wiki'):
+            self.subject_name = sitename.removesuffix(' Wiki')
         if target_lang is not None and target_lang != 'en':
             doc_page_name = self.target.localize('Scribunto-doc-page-name')
             print(doc_page_name)
@@ -44,6 +48,8 @@ class Loadout:
             self.copy_namespace(ns)
         if not self.is_import:
             self.copy_namespace(0)
+        else:
+            self.redirect_mainpage()
 
     def copy_namespace(self, ns: int):
         for orig_page in self.loadout.client.allpages(namespace=ns):
@@ -91,6 +97,8 @@ class Loadout:
 
     def save(self, target_page: Page, orig_page: Page):
         text = orig_page.text()
+        if self.subject_name is not None:
+            text = text.replace('SUBJECTNAME', self.subject_name)
         if target_page.name == 'Main Page':
             target_mainpage_name = self.target.client.site['sitename']
             text = f'#redirect [[{target_mainpage_name}]]'
@@ -98,6 +106,13 @@ class Loadout:
         protections = '|'.join([f'{k}={v[0]}' for k, v in orig_page.protection.items()])
         if protections != '':
             self.target.protect(target_page, protections=protections)
+
+    def redirect_mainpage(self):
+        mainpage = self.target.client.pages['Main Page']
+        if 'MediaWiki has been installed' in mainpage.text():
+            target_mainpage_name = self.target.client.site['sitename']
+            text = f'#redirect [[{target_mainpage_name}]]'
+            self.target.save(mainpage, text)
 
 
 if __name__ == '__main__':
