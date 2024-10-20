@@ -1,3 +1,4 @@
+import argparse
 import time
 
 import requests.exceptions
@@ -5,7 +6,13 @@ from mwcleric import AuthCredentials
 from mwcleric import WikiggClient
 from mwclient.page import Page
 
+
 WIKIS = ['gg']
+IS_IMPORT = None  # don't overwrite & don't make mainspace pages
+SKIP_CSS = None
+START_AT_PAGE = None
+START_AT_NAMESPACE = 0
+SUBJECT_NAME = None
 
 
 class Loadout:
@@ -13,27 +20,44 @@ class Loadout:
     startat_page = None
     # noinspection PyRedeclaration
     # startat_page = 'Template:License'
-    is_import = False  # don't overwrite & don't make mainspace pages
-    skip_css = False
-    summary = 'Adding default set of pages'
-    subject_name: str = None
+    is_import: bool
+    skip_css: bool
+    summary: str = 'Adding default set of pages'
+    subject_name: str|None
+    docpage: str = '/doc'
 
-    def __init__(self, target_name, target_lang):
+    def __init__(self,
+                 target_name,
+                 target_lang,
+                 is_import,
+                 skip_css,
+                 start_at_page,
+                 start_at_ns,
+                 subject_name):
         self.passed_startat = False
-        credentials = AuthCredentials(user_file="me")  # set to True iff the wiki is onboarding
+        credentials = AuthCredentials(user_file="me")
         self.target_name = target_name
         self.target_lang = target_lang
+        self.is_import = is_import
+        self.skip_css = skip_css
+        self.startat_page = start_at_page
+        self.startat_namespace = start_at_ns
         self.loadout = WikiggClient('defaultloadout')
-        self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)  # edit the wiki here
+        self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)
+
+        self.subject_name = subject_name
+        if subject_name is None:
+            sitename: str = self.target.client.site['sitename']
+            if sitename.endswith(' Wiki'):
+                self.subject_name = sitename.removesuffix(' Wiki')
+
         self.docpage = '/doc'
-        sitename: str = self.target.client.site['sitename']
-        if sitename.endswith(' Wiki'):
-            self.subject_name = sitename.removesuffix(' Wiki')
         if target_lang is not None and target_lang != 'en':
             doc_page_name = self.target.localize('Scribunto-doc-page-name')
             print(doc_page_name)
             page, docpage = doc_page_name.split('/')
             self.docpage = '/' + docpage
+        
 
     def run(self):
         self.copy()
@@ -116,9 +140,23 @@ class Loadout:
 
 
 if __name__ == '__main__':
-    for wiki in WIKIS:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--is-import', action='store_true', default=IS_IMPORT)
+    parser.add_argument('-s', '--skip-css', action='store_true', default=SKIP_CSS)
+    parser.add_argument('-p', '--from-page', type=str, default=START_AT_PAGE)
+    parser.add_argument('-n', '--from-namespace', type=int, default=START_AT_NAMESPACE)
+    parser.add_argument('wikis', nargs='+', default=WIKIS)
+    args = parser.parse_args()
+
+    common_bot_args = dict(
+        is_import=args.is_import,
+        skip_css=args.skip_css,
+        start_at_page=args.from_page,
+        start_at_ns=args.from_namespace,
+    )
+
+    for wiki in args.wikis:
+        name, lang = wiki, None
         if ':' in wiki:
             name, lang = wiki.split(':')
-            Loadout(name, lang).run()
-        else:
-            Loadout(wiki, None).run()
+        Loadout(name, lang, subject_name=SUBJECT_NAME, **common_bot_args).run()
