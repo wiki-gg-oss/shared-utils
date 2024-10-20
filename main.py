@@ -7,9 +7,9 @@ from mwcleric import WikiggClient
 from mwclient.page import Page
 
 
-WIKIS = ['gg']
-IS_IMPORT = None  # don't overwrite & don't make mainspace pages
-SKIP_CSS = None
+WIKIS = ['gg:en']
+IS_IMPORT = True  # don't overwrite & don't make mainspace pages
+SKIP_CSS = True
 START_AT_PAGE = None
 START_AT_NAMESPACE = 0
 SUBJECT_NAME = None
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--skip-css', action='store_true', default=SKIP_CSS)
     parser.add_argument('-p', '--from-page', type=str, default=START_AT_PAGE)
     parser.add_argument('-n', '--from-namespace', type=int, default=START_AT_NAMESPACE)
-    parser.add_argument('wikis', nargs='+', default=WIKIS)
+    parser.add_argument('wikis', nargs='*', default=WIKIS)
     args = parser.parse_args()
 
     common_bot_args = dict(
