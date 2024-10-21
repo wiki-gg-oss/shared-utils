@@ -17,11 +17,7 @@ class Loadout:
     additional_pages = ['Module:Main_page', 'MediaWiki:Gadget-mpEditLinks', 'MediaWiki:Gadget-mpEditLinks.js', 'MediaWiki:Gadget-mpEditLinks.css']
 
     appending_pages = {
-<<<<<<< HEAD
         'MediaWiki:Gadgets-definition' : '\n* mpEditLinks[ResourceLoader|rights=editprotected|default]|mpEditLinks.css|mpEditLinks.js',
-=======
-        'MediaWiki:Gadget-definitions' : '\n* mpEditLinks[ResourceLoader|rights=editprotected|default]|mpEditLinks.css|mpEditLinks.js',
->>>>>>> 6d2898a96548155fa16d51c7cd770113ace7784e
     }
 
     def __init__(self, target_name, target_lang):
