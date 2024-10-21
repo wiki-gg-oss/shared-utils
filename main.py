@@ -96,8 +96,8 @@ class Loadout:
         new_site_name = self.target.client.site['sitename']
         if ns == 4:
             new_title = f'Project:{orig_page.page_title}'
-        if orig_page.name == self.loadout.client.site['mainpage']:
-            new_title = new_site_name
+        if orig_page.base_name == self.loadout.client.site['mainpage']:
+            new_title = orig_page.name.replace(self.loadout.client.site['mainpage'], new_site_name)
         if orig_page.name == 'Category:' + self.loadout.client.site['sitename']:
             new_title = 'Category:' + new_site_name
         if orig_page.namespace == 828 and orig_page.name.endswith('/doc'):
