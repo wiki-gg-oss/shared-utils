@@ -7,9 +7,9 @@ from mwcleric import WikiggClient
 from mwclient.page import Page
 
 
-WIKIS = ['gg:en']
-IS_IMPORT = True  # don't overwrite & don't make mainspace pages
-SKIP_CSS = True
+WIKIS = ['testimp:en']
+IS_IMPORT = False  # don't overwrite & don't make mainspace pages
+SKIP_CSS = False
 START_AT_PAGE = None
 START_AT_NAMESPACE = 0
 SUBJECT_NAME = None
@@ -129,7 +129,10 @@ class Loadout:
         self.target.save(target_page, text, summary=self.summary)
         protections = '|'.join([f'{k}={v[0]}' for k, v in orig_page.protection.items()])
         if protections != '':
-            self.target.protect(target_page, protections=protections)
+            try:
+                self.target.protect(target_page, protections=protections)
+            except Exception as e:
+                pass
 
     def redirect_mainpage(self):
         mainpage = self.target.client.pages['Main Page']
