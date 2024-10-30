@@ -7,7 +7,7 @@ from mwcleric import WikiggClient
 from mwclient.page import Page
 
 
-WIKIS = ['testimp:en']
+WIKIS = ['gg:en']
 IS_IMPORT = False  # don't overwrite & don't make mainspace pages
 SKIP_CSS = False
 START_AT_PAGE = None
