@@ -74,6 +74,7 @@ class Loadout:
             self.copy_namespace(0)
         else:
             self.redirect_mainpage()
+            self.add_user_migration_notes()
 
     def copy_namespace(self, ns: int):
         for orig_page in self.loadout.client.allpages(namespace=ns):
@@ -140,6 +141,12 @@ class Loadout:
             target_mainpage_name = self.target.client.site['sitename']
             text = f'#redirect [[{target_mainpage_name}]]'
             self.target.save(mainpage, text)
+
+    def add_user_migration_notes(self):
+        text = '{{int:wikigg-fork-reclaim-note}}'
+        for page_title in ('MediaWiki:Loginprompt', 'MediaWiki:Signupstart'):
+            page = Page(self.target.client, page_title)
+            self.target.save(page, text, summary=self.summary)
 
 
 if __name__ == '__main__':
