@@ -8,7 +8,7 @@ from mwclient.page import Page
 
 
 WIKIS = ['gg:en']
-IS_IMPORT = False  # don't overwrite & don't make mainspace pages
+IS_IMPORT = False  # don't overwrite (except the main page)
 SKIP_CSS = False
 START_AT_PAGE = None
 START_AT_NAMESPACE = 0
@@ -23,7 +23,7 @@ class Loadout:
     is_import: bool
     skip_css: bool
     summary: str = 'Adding default set of pages'
-    subject_name: str|None
+    subject_name: str = None
     docpage: str = '/doc'
 
     def __init__(self,
@@ -45,6 +45,9 @@ class Loadout:
         self.loadout = WikiggClient('defaultloadout')
         self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)
 
+        self.orig_main_page_name = self.loadout.client.site['mainpage']
+        self.target_main_page_name = self.target.client.site['sitename']
+
         self.subject_name = subject_name
         if subject_name is None:
             sitename: str = self.target.client.site['sitename']
@@ -64,19 +67,21 @@ class Loadout:
 
     def copy(self):
         for ns in self.loadout.client.namespaces:
-            print(f"Starting namespace {ns}")
-            if ns <= self.startat_namespace - 1:  # ns 4 is Project ns
+            if ns <= self.startat_namespace - 1:
                 continue
-            if ns == 0:
-                continue
+
             self.copy_namespace(ns)
-        if not self.is_import:
-            self.copy_namespace(0)
-        else:
+        
+        # note for future reference:
+        # Even after the mediawiki namespace is processed, self.target.client.site['sitename'] does not update.
+        # I believe this is because that value is only fetched once when the client object is first initialized
+
+        if self.is_import:
             self.redirect_mainpage()
             self.add_user_migration_notes()
 
     def copy_namespace(self, ns: int):
+        print(f"Starting namespace {ns}")
         for orig_page in self.loadout.client.allpages(namespace=ns):
             try:
                 self.copy_page(orig_page, ns)
@@ -92,31 +97,37 @@ class Loadout:
         if orig_page.name == 'File:Site-favicon.ico':
             # don't copy the favicon page, to avoid warnings when people upload it
             return
-        print(orig_page.name)
+        print(f'Processing {orig_page.name}')
         new_title = orig_page.name
-        new_site_name = self.target.client.site['sitename']
-        if ns == 4:
+        if ns == 4: # ns 4 is Project ns
             new_title = f'Project:{orig_page.page_title}'
-        if orig_page.base_name == self.loadout.client.site['mainpage']:
-            new_title = orig_page.name.replace(self.loadout.client.site['mainpage'], new_site_name)
-        if orig_page.name == 'Category:' + self.loadout.client.site['sitename']:
-            new_title = 'Category:' + new_site_name
-        if orig_page.namespace == 828 and orig_page.name.endswith('/doc'):
+        if orig_page.base_name == self.orig_main_page_name: # if we're on the dlw main page, change the name to the local wiki's main page name
+            new_title = orig_page.name.replace(self.orig_main_page_name, self.target_main_page_name) # the replace is for handling subpages
+        if orig_page.name == 'Category:' + self.orig_main_page_name: # if we're on the dlw root category, change the name to the local wiki's name
+            new_title = 'Category:' + self.target_main_page_name
+        if orig_page.namespace == 828 and orig_page.name.endswith('/doc'): # for doc pages, replace /doc with the localized equivalent
             new_title = new_title.replace('/doc', self.docpage)
 
         target_page = self.target.client.pages[new_title]
         do_save = False
-        if not self.is_import:
+
+        if self.is_import:
+            if new_title == 'MediaWiki:Copyright': # skip Mediawiki:Copyright
+                pass
+            elif new_title in ['MediaWiki:Common.css', 'MediaWiki:Vector.css']: #if skip_css is true, skip these pages
+                if not self.skip_css:
+                    do_save = True
+            elif target_page.exists: # if the target page already exists, only overwrite if it's the main page
+                if new_title == self.target_main_page_name:
+                    do_save = True
+            else: # save in all other cases
+                do_save = True
+        else:
             # if it's not an import we always do the save
             # except at page MediaWiki copyright, then we don't want to overwrite
-            # if new_title != 'MediaWiki:Copyright':
             if new_title != 'MediaWiki:Copyright' or not target_page.exists:
                 do_save = True
-        elif new_title in ['MediaWiki:Common.css', 'MediaWiki:Vector.css']:
-            if not self.skip_css:
-                do_save = True
-        elif not target_page.exists and new_title != 'MediaWiki:Copyright':
-            do_save = True
+                
         if do_save:
             self.save(target_page, orig_page)
 
@@ -164,6 +175,11 @@ if __name__ == '__main__':
         start_at_page=args.from_page,
         start_at_ns=args.from_namespace,
     )
+
+    if args.is_import:
+        print("This is an import wiki, pages other than the mainpage will not be overwritten.")
+    if args.skip_css:
+        print("CSS pages will be skipped.")
 
     for wiki in args.wikis:
         name, lang = wiki, None
