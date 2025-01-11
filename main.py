@@ -76,8 +76,9 @@ class Loadout:
         # Even after the mediawiki namespace is processed, self.target.client.site['sitename'] does not update.
         # I believe this is because that value is only fetched once when the client object is first initialized
 
+        self.redirect_mainpage()
+        
         if self.is_import:
-            self.redirect_mainpage()
             self.add_user_migration_notes()
 
     def copy_namespace(self, ns: int):
@@ -147,13 +148,15 @@ class Loadout:
                 pass
 
     def redirect_mainpage(self):
-        mainpage = self.target.client.pages['Main Page']
+        print('Redirecting main page')
+        mainpage = self.target.client.pages[self.target.client.site['mainpage']]
         if 'MediaWiki has been installed' in mainpage.text():
             target_mainpage_name = self.target.client.site['sitename']
             text = f'#redirect [[{target_mainpage_name}]]'
             self.target.save(mainpage, text)
 
     def add_user_migration_notes(self):
+        print('Adding user migration notes')
         text = '{{int:wikigg-fork-reclaim-note}}'
         for page_title in ('MediaWiki:Loginprompt', 'MediaWiki:Signupstart'):
             page = Page(self.target.client, page_title)
