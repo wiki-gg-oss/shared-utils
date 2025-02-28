@@ -62,13 +62,13 @@ class Loadout:
         self.copy()
 
     def copy(self):
-        # for ns in self.loadout.client.namespaces:
-        #     print(f"Starting namespace {ns}")
-        #     if ns <= self.startat_namespace - 1:  # ns 4 is Project ns
-        #         continue
-        #     if ns == 0:
-        #         continue
-        #     self.copy_namespace(ns)
+        for ns in self.loadout.client.namespaces:
+            print(f"Starting namespace {ns}")
+            if ns <= self.startat_namespace - 1:  # ns 4 is Project ns
+                continue
+            if ns == 0:
+                continue
+            self.copy_namespace(ns)
         if not self.is_import:
             self.copy_namespace(0)
             return
