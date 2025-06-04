@@ -13,6 +13,7 @@ SKIP_CSS = False
 START_AT_PAGE = None
 START_AT_NAMESPACE = 0
 SUBJECT_NAME = None
+LOADOUT_WIKI = 'defaultloadout' # options include "defaultloadout", "mcmodloadout"
 
 
 class Loadout:
@@ -42,7 +43,7 @@ class Loadout:
         self.skip_css = skip_css
         self.startat_page = start_at_page
         self.startat_namespace = start_at_ns
-        self.loadout = WikiggClient('defaultloadout', credentials=credentials)
+        self.loadout = WikiggClient(LOADOUT_WIKI, credentials=credentials)
         self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)
 
         self.subject_name = subject_name
