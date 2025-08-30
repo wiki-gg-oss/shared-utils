@@ -10,56 +10,62 @@ from mwclient.page import Page
 
 WIKIS = ['gg:en']
 UPDATE_ONLY = False # If true: don't copy the content boxes, don't append gadget definition
+IS_IMPORT = False # If true: only copy the content boxes. This is for use on imported wikis, where DLW is copied except for mainspace
 
 
 class Loadout:
 
-    categories = ['Main page templates', 'Main page boxes']
-    additional_pages = ['Module:Main_page', 'MediaWiki:Gadget-mpEditLinks', 'MediaWiki:Gadget-mpEditLinks.js', 'MediaWiki:Gadget-mpEditLinks.css']
+    categories = ['Main page templates', 'Main page boxes', "Pages using IMP"]
+    additional_pages = ['Module:Main_page', 'MediaWiki:Gadgets/mpEditLinks', 'MediaWiki:Gadgets/mpEditLinks/main.js', 'MediaWiki:Gadgets/mpEditLinks/main.css']
 
-    appending_pages = {
-        'MediaWiki:Gadgets-definition' : '\n* mpEditLinks[ResourceLoader|rights=editprotected|default]|mpEditLinks.css|mpEditLinks.js',
-    }
-
-    def __init__(self, target_name, target_lang, update_only):
-        credentials = AuthCredentials(user_file="me")  # set to True iff the wiki is onboarding
+    def __init__(self, target_name, target_lang, update_only, is_import):
+        credentials = AuthCredentials(user_file="me")
         self.target_name = target_name
         self.target_lang = target_lang
         self.loadout = WikiggClient('defaultloadout')
-        self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)  # edit the wiki here
+        self.target = WikiggClient(target_name, credentials=credentials, lang=target_lang)
         self.update_only = update_only
+        self.is_import = is_import
 
         self.orig_main_page = self.loadout.client.pages[self.loadout.client.site['mainpage']]
         self.target_main_page = self.target.client.pages[self.target.client.site['mainpage']]
 
-        self.summary = 'Updating IMP pages' if update_only else 'Adding IMP pages'
+        self.summary = 'Adding IMP pages'
 
     def run(self):
-        self.copy()
 
-    def copy(self):
+        if self.update_only:
+            self.summary = "Updating IMP pages"
+            self.copy_update()
+        elif self.is_import:
+            self.summary = "Adding IMP boxes"
+            self.copy_import()
+        else:
+            self.copy_all()
+
+        # run these under all options
+        self.move()
+        self.purge_main_page()
+
+    def copy_update(self):
+        self.copy_pages()
+        self.copy_category('Main page templates')
+
+    def copy_import(self):
+        self.copy_category('Main page boxes')
+
+    def copy_all(self):
         # copy the categories and their members
         self.copy_categories()
 
         # copy the individual pages
         self.copy_pages()
 
-        if not self.update_only:
-            # append text to pages that have appending text set
-            self.append_pages()
+        # append the CSS to common.css
+        self.copy_mp_css()
 
-            # append the CSS to common.css
-            self.copy_mp_css()
-
-            # copy the main page itself
-            print("Copying main page")
-            self.copy_page(self.orig_main_page)
-
-        # move the mp boxes to correct name
-        self.move()
-
-        self.purge_main_page()
-        
+        # copy the main page itself
+        self.copy_page(self.orig_main_page)
 
     def copy_categories(self):
         for cat in self.categories:
@@ -108,11 +114,6 @@ class Loadout:
 
         self.target.save(target_page, text, summary=self.summary)
 
-    def append_pages(self):
-        print("Starting appending pages")
-        for page, text in self.appending_pages.items():
-            self.append(self.loadout.client.pages[page], text)
-
     def append(self, target_page: Page, text: str):
         print(target_page.name)
         self.target.append(target_page, text, summary=self.summary)
@@ -137,22 +138,33 @@ class Loadout:
         print(f"Purged {self.target_main_page.name}")
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--update-only', action='store_true', default=UPDATE_ONLY)
+    parser.add_argument('-i', '--is-import', action='store_true', default=IS_IMPORT)
     parser.add_argument('wikis', nargs='*', default=WIKIS)
     args = parser.parse_args()
     
     parsed_args = dict(
-        update_only=args.update_only,
+        update_only = args.update_only,
+        is_import = args.is_import
     )
+
+    if args.update_only and args.is_import:
+        print('Arguments --update-only (-u) and --is-import (-i) are incompatible with each other.')
+        return
 
     print(f"Running PIMP on the following wikis:\n{args.wikis}")
     if args.update_only:
         print("Running in update-only mode, mp boxes will not have their content changed.")
+    if args.is_import:
+        print("Running in import mode, Only content boxes will be added.")
 
     for wiki in args.wikis:
         name, lang = wiki, None
         if ':' in wiki:
             name, lang = wiki.split(':')
         Loadout(name, lang, **parsed_args).run()
+
+if __name__ == '__main__':
+    main()
