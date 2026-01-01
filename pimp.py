@@ -16,7 +16,7 @@ IS_IMPORT = False # If true: only copy the content boxes. This is for use on imp
 class Loadout:
 
     categories = ['Main page templates', 'Main page boxes']
-    additional_pages = ['Module:Main_page', 'MediaWiki:Gadgets/mpEditLinks', 'MediaWiki:Gadgets/mpEditLinks/main.js', 'MediaWiki:Gadgets/mpEditLinks/main.css', 'Category:Pages using IMP'] #Category:Pages using IMP is here instead of in categories because we only want the category page itself, not its members
+    additional_pages = ['Module:Main_page', 'MediaWiki:Gadgets/mpEditLinks', 'MediaWiki:Gadgets/mpEditLinks/main.js', 'MediaWiki:Gadgets/mpEditLinks/main.css', 'MediaWiki:Gadgets/imp', 'MediaWiki:Gadgets/imp/variablesEditMe.css', 'MediaWiki:Gadgets/imp/mainReadonly.css', 'MediaWiki:Gadgets/imp/customEditMe.css', 'Category:Pages using IMP'] #Category:Pages using IMP is here instead of in categories because we only want the category page itself, not its members
 
     def __init__(self, target_name, target_lang, update_only, is_import):
         credentials = AuthCredentials(user_file="me")
@@ -82,7 +82,7 @@ class Loadout:
         self.copy_page(self.loadout.client.categories[cat])
 
     def copy_mp_css(self):
-        text = '\n\n' + re.search(r'(^\/\*+\n\* Main page layout \*.+End main page layout \*\n\*+\/)', self.loadout.client.pages['MediaWiki:Common.css'].text(), flags=re.DOTALL | re.MULTILINE).group(0)
+        text = '\n\n' + re.search(r'(^\/\*+\n\* \[\[Template:MP link\]\] \*.+End Template:MP link \*\n\*+\/)', self.loadout.client.pages['MediaWiki:Common.css'].text(), flags=re.DOTALL | re.MULTILINE).group(0)
         self.append(self.target.client.pages['MediaWiki:Common.css'], text)
 
     def copy_pages(self):
